@@ -31,6 +31,10 @@ class CTFile:
             self.getFileShare()
 
 if __name__ == '__main__':
-    ct = CTFile('https://545c.com/d/21011413-44246109-662f16',1145141919810)
+    link = input("CTFile Share Link: ")
+    passwd = input("Password: ")
+    print("\b\b\b\b\b\b\b\b\b\bIniting...",end='')
+    ct = CTFile(link,passwd)
+    print("\b\b\b\b\b\b\b\b\b\bGetting Share...")
     ct.getShare()
     print(ct.ctFileList)
