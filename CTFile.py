@@ -1,6 +1,3 @@
-import requests
-
-
 class CTFile:
     def __init__(self,ctFileShareLink,ctSharePasswd=None,userAgent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.59 Safari/537.36 Edg/92.0.902.22'):
         self.ctShareLink = ctFileShareLink
