@@ -10,8 +10,8 @@ class CTFile:
         if ctSharePasswd == None:
             self.httpHeaders = {"user-agent": userAgent,"Origin": self.ctServer}
         else:
-            passName = self.shareCode.split('-')[1]
-            self.httpHeaders = {"user-agent": userAgent,"Origin": self.ctServer,'cookie':f"pass_{self.shareType}{passName}={str(ctSharePasswd)}"}
+            shareId = self.shareCode.split('-')[1]
+            self.httpHeaders = {"user-agent": userAgent,"Origin": self.ctServer,'cookie':f"pass_{self.shareType}{shareId}={str(ctSharePasswd)}"}
     def getDirectoryShare(self):
         import requests,json,re
         getDirRequest = requests.get(f'https://webapi.ctfile.com/getdir.php?path=d&d={self.shareCode}',headers=self.httpHeaders) # 调用文件夹详情API
@@ -30,6 +30,7 @@ class CTFile:
             downloadApiLink = f'https://webapi.ctfile.com/get_file_url.php?uid={uid}&fid={fid}&file_chk={fchk}'
             fileList = [fname,uid,fid,fchk,downloadApiLink]
             self.ctFileList.append(fileList) # ctFileList 的每一个项目都是一个列表，格式为 [fileName, userId, file_id, file_chk, DownloadApi]
+        return self.ctFileList
     def getShare(self):
         if self.shareType == 'd':
             self.getDirectoryShare()
