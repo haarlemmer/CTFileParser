@@ -1,7 +1,7 @@
 class CTFile:
     def __init__(self,ctFileShareLink,ctSharePasswd=None,userAgent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.59 Safari/537.36 Edg/92.0.902.22'):
         self.ctShareLink = ctFileShareLink
-        self.ctServer = f"https://{ctFileShareLink.split('/')[2]}" # 获得城通网盘马甲链接，在获取直链时需要作为首部发送。
+        self.ctServer = f"https://{ctFileShareLink.split('/')[2]}" # 获得城通网盘马甲链接，在获取直链时需要作为首部 Origin 字段发送。
         self.shareType = ctFileShareLink.split('/')[3] # 城通下载链接中, "/d/" 为文件夹, "/f/"为单文件
         self.shareCode = ctFileShareLink.split('/')[4] # 分享URL中最后一项为shareCode
         self.sharePasswd = ctSharePasswd
@@ -35,20 +35,31 @@ class CTFile:
             self.getDirectoryShare()
         elif self.shareType == 'f':
             self.getFileShare()
-    def genDownloadLink(self):
+    def genDownloadLink(self,verifyCodeAutoRetry=True):
         import requests,json 
         for ctFile in self.ctFileList:
             downApiRequest = requests.get(f'https://webapi.ctfile.com/get_file_url.php?uid={ctFile[1]}&fid={ctFile[2]}&file_chk={ctFile[3]}')
             downApiJson = json.loads(downApiRequest.text)
+            if downApiJson['code'] == 503: # 若需要验证码, 则重新调用 API
+                if downApiJson['message'] == 'require for verifycode':
+                    if verifyCodeAutoRetry:
+                        return self.genDownloadLink()
+                    else:
+                        raise KeyError("CTFile Need A Verify Code And Auto Retry Is Desabled")
             self.downloadLinkList.append([ctFile[0],downApiJson['downurl']]) # downloadLinkList 的每一个项目都是一个列表, 格式为 [fileName, downloadLink]
         return self.downloadLinkList
 
 
 if __name__ == '__main__':
+    import getpass
     link = input("CTFile Share Link: ")
-    passwd = input("Password: ")
+    passwd = getpass.getpass("Password: ")
     print("\b\b\b\b\b\b\b\b\b\bIniting...",end='')
     ct = CTFile(link,passwd)
-    print("\b\b\b\b\b\b\b\b\b\bGetting Share...")
+    print("\b\b\b\b\b\b\b\b\b\b读取分享...",end='')
     ct.getShare()
-    print(ct.genDownloadLink())
+    downloadLinks = ct.genDownloadLink()
+    print("\b\b\b\b\b\b\b\b\b\b生成链接...",end='')
+    print("\nWarning: 城通网盘在下载直链层进行了多文件下载限制而不是在web界面限制, 无法从浏览器直接全部下载\n\n")
+    for downloadLink in downloadLinks:
+        print(f"{downloadLink[0]}\t{downloadLink[1]}\n")
