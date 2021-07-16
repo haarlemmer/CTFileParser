@@ -31,6 +31,18 @@ class CTFile:
             fileList = [fname,uid,fid,fchk,downloadApiLink]
             self.ctFileList.append(fileList) # ctFileList 的每一个项目都是一个列表，格式为 [fileName, userId, file_id, file_chk, DownloadApi]
         return self.ctFileList
+    def getFileShare(self):
+        import requests,json
+        fileCode = self.shareCode # 在单文件分享中, fileCode 和 shareCode 相同
+        getFileRequest = requests.get(f'https://webapi.ctfile.com/getfile.php?path=f&f={fileCode}',headers=self.httpHeaders)
+        getFileJson = json.loads(getFileRequest.text)
+        uid = getFileJson['userid']
+        fid = getFileJson['file_id']
+        fname = getFileJson['file_name']
+        fchk = getFileJson["file_chk"]
+        downloadApiLink = f'https://webapi.ctfile.com/get_file_url.php?uid={uid}&fid={fid}&file_chk={fchk}'
+        fileList = [fname,uid,fid,fchk,downloadApiLink]
+        self.ctFileList.append(fileList)
     def getShare(self):
         if self.shareType == 'd':
             self.getDirectoryShare()
@@ -60,7 +72,7 @@ if __name__ == '__main__':
     print("\b\b\b\b\b\b\b\b\b\b读取分享...",end='')
     ct.getShare()
     downloadLinks = ct.genDownloadLink()
-    print("\b\b\b\b\b\b\b\b\b\b生成链接...",end='')
+    print("\b\b\b\b\b\b\b\b\b\b生成链接...")
     print("\nWarning: 城通网盘在下载直链层进行了多文件下载限制而不是在web界面限制, 无法从浏览器直接全部下载\n\n")
     for downloadLink in downloadLinks:
         print(f"{downloadLink[0]}\t{downloadLink[1]}\n")
