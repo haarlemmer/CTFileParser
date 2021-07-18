@@ -1,4 +1,4 @@
-class CTFile:
+class CTFileShare:
     def __init__(self,ctFileShareLink,ctSharePasswd=None,userAgent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.59 Safari/537.36 Edg/92.0.902.22'):
         self.ctShareLink = ctFileShareLink
         self.ctServer = f"https://{ctFileShareLink.split('/')[2]}" # 获得城通网盘马甲链接，在获取直链时需要作为首部 Origin 字段发送。
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     link = input("CTFile Share Link: ")
     passwd = getpass.getpass("Password: ")
     print("\b\b\b\b\b\b\b\b\b\bIniting...",end='')
-    ct = CTFile(link,passwd)
+    ct = CTFileShare(link,passwd)
     print("\b\b\b\b\b\b\b\b\b\b读取分享...",end='')
     ct.getShare()
     downloadLinks = ct.genDownloadLink()
