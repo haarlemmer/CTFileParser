@@ -13,7 +13,7 @@ class CTFileShare:
             shareId = self.shareCode.split('-')[1]
             self.httpHeaders = {"user-agent": userAgent,"Origin": self.ctServer,'cookie':f"pass_{self.shareType}{shareId}={str(ctSharePasswd)}"}
     def getDirectoryShare(self):
-        import requests,json,re
+        import requests,json
         getDirRequest = requests.get(f'https://webapi.ctfile.com/getdir.php?path=d&d={self.shareCode}',headers=self.httpHeaders) # 调用文件夹详情API
         getDirJson = json.loads(getDirRequest.text)
         apiUrl = f"https://webapi.ctfile.com{getDirJson['url']}" # 获取文件夹内容 API 接口 URL
@@ -38,7 +38,6 @@ class CTFileShare:
         import re
         re.search(r'(?<=<a target="_blank" href=").*(?=">)',f[1]).group().split('/')[-1] # 在城通文件夹分享中, 每一个子文件页面的URL中最后的一项即为fileCode. 此处调用了城通API，直接从返回值中提取fileCode. fileCode会过期
     def getFileShare(self):
-        import requests,json
         fileCode = self.shareCode # 在单文件分享中, fileCode 和 shareCode 相同
         self.ctFileList.append(self.getFileInfo(fileCode))
     def getShare(self):
