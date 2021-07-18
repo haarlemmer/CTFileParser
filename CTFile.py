@@ -25,7 +25,24 @@ class CTFileShare:
         apiJson = json.loads(apiRequest.text)
         for f in apiJson['aaData']:
             fileCode = self.getFileCode(f) # fileCode 读取挪至 getFileCode 函数
-            fileList.append(self.getFileInfo(fileCode)) # 文件详情读取挪至 getFileInfo
+            if fileCode == None:
+                nextDirCode = self.getDirCode(f)
+                if dirCode == None:
+                    raise TypeError("Unknown File Type")
+                else:
+                    if dirCode == self.shareCode:
+                        fileList.append({
+                            "type": "Dir",
+                            "name": getDirJson['folder_name'],
+                            "files": self.getDirectoryInfo(nextDirCode),
+                        })
+                    else:
+                        fileList.append({
+                            "type": "Dir",
+                            "files": self.getDirectoryInfo(nextDirCode,path=dirCode),
+                        })
+            else:
+                fileList.append(self.getFileInfo(fileCode)) # 文件详情读取挪至 getFileInfo
         return fileList
     def getFileInfo(self,fileCode):
         import json,requests
@@ -37,7 +54,20 @@ class CTFileShare:
         fchk = getFileJson["file_chk"]
         downloadApiLink = f'https://webapi.ctfile.com/get_file_url.php?uid={uid}&fid={fid}&file_chk={fchk}'
         fileList = [fname,uid,fid,fchk,downloadApiLink]
-        self.ctFileList.append(fileList) # ctFileList 的每一个项目都是一个列表，格式为 [fileName, userId, file_id, file_chk, DownloadApi]
+        self.ctFileList.append({
+            "type": "File",
+            "name": fname,
+            "userId": uid,
+            "fileId": fid,
+            "fileChk": fchk,
+            "downloadAPI": downloadApiLink,
+        })
+    def getDirCode(self,f):
+        import re
+        try:
+            return re.search(r'(?<=<a href="javascript: void\(0\)" onclick="load_subdir\().*(?=">\))',f[1]).group()
+        except:
+            return None
     def getFileCode(self,f):
         import re
         try:
