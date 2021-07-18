@@ -20,21 +20,12 @@ class CTFileShare:
         apiRequest = requests.get(apiUrl,headers=self.httpHeaders)
         apiJson = json.loads(apiRequest.text)
         for f in apiJson['aaData']:
-            fileCode = re.search(r'(?<=<a target="_blank" href=").*(?=">)',f[1]).group().split('/')[-1] # 在城通文件夹分享中, 每一个子文件页面的URL中最后的一项即为fileCode. 此处调用了城通API，直接从返回值中提取fileCode. fileCode会过期
-            getFileRequest = requests.get(f'https://webapi.ctfile.com/getfile.php?f={fileCode}',headers=self.httpHeaders)
-            getFileJson = json.loads(getFileRequest.text)
-            uid = getFileJson['userid']
-            fid = getFileJson['file_id']
-            fname = getFileJson['file_name']
-            fchk = getFileJson["file_chk"]
-            downloadApiLink = f'https://webapi.ctfile.com/get_file_url.php?uid={uid}&fid={fid}&file_chk={fchk}'
-            fileList = [fname,uid,fid,fchk,downloadApiLink]
-            self.ctFileList.append(fileList) # ctFileList 的每一个项目都是一个列表，格式为 [fileName, userId, file_id, file_chk, DownloadApi]
+            fileCode = self.getFileCode(f) # fileCode 读取挪至 getFileCode 函数
+            self.ctFileList.append(self.getFileInfo(fileCode)) # 文件详情读取挪至 getFileInfo
         return self.ctFileList
-    def getFileShare(self):
-        import requests,json
-        fileCode = self.shareCode # 在单文件分享中, fileCode 和 shareCode 相同
-        getFileRequest = requests.get(f'https://webapi.ctfile.com/getfile.php?path=f&f={fileCode}',headers=self.httpHeaders)
+    def getFileInfo(self,fileCode):
+        import json,requests
+        getFileRequest = requests.get(f'https://webapi.ctfile.com/getfile.php?f={fileCode}',headers=self.httpHeaders)
         getFileJson = json.loads(getFileRequest.text)
         uid = getFileJson['userid']
         fid = getFileJson['file_id']
@@ -42,7 +33,14 @@ class CTFileShare:
         fchk = getFileJson["file_chk"]
         downloadApiLink = f'https://webapi.ctfile.com/get_file_url.php?uid={uid}&fid={fid}&file_chk={fchk}'
         fileList = [fname,uid,fid,fchk,downloadApiLink]
-        self.ctFileList.append(fileList)
+        self.ctFileList.append(fileList) # ctFileList 的每一个项目都是一个列表，格式为 [fileName, userId, file_id, file_chk, DownloadApi]
+    def getFileCode(self,f):
+        import re
+        re.search(r'(?<=<a target="_blank" href=").*(?=">)',f[1]).group().split('/')[-1] # 在城通文件夹分享中, 每一个子文件页面的URL中最后的一项即为fileCode. 此处调用了城通API，直接从返回值中提取fileCode. fileCode会过期
+    def getFileShare(self):
+        import requests,json
+        fileCode = self.shareCode # 在单文件分享中, fileCode 和 shareCode 相同
+        self.ctFileList.append(self.getFileInfo(fileCode))
     def getShare(self):
         if self.shareType == 'd':
             self.getDirectoryShare()
