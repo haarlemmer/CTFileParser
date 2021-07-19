@@ -9,7 +9,7 @@ def getDirCode(retFile):
     Usage: getDirCode(<file>)
     """
     try:
-        regex = r'(?<=<a href="javascript: void\(0\)" onclick="load_subdir\().*(?=">\))'
+        regex = r'(?<=load_subdir\().*(?=\))'
         dirCode = re.search(regex, retFile[1]).group()
         return dirCode
     except AttributeError:
@@ -50,17 +50,27 @@ class CTFileShare:
         """
         文件夹分享读取主函数
         """
-        self.ctFileList = self.getDirectoryInfo(self.shareCode)
+        self.ctFileList = self.getDirectoryInfo()
         return self.ctFileList
-    def getDirectoryInfo(self,dirCode,path="d"):
+    def getDirectoryInfo(self,dirCode=None):
         """
         文件夹信息读取
         Usage: getDirectoryInfo(<文件夹id>,[上级文件夹])
         """
         fileList = []
         # 调用文件夹详情API
-        getDirReq = requests.get(f'https://webapi.ctfile.com/getdir.php?path={path}&d={dirCode}',\
-                                    headers=self.httpHeaders)
+        if dirCode is None:
+            getDirReq = requests.get(('https://webapi.ctfile.com/getdir.php?'
+                                    'path=d'
+                                    f'&d={self.shareCode}'),\
+                        headers=self.httpHeaders)
+        else:
+
+            getDirReq = requests.get(('https://webapi.ctfile.com/getdir.php?'
+                                    'path=d'
+                                    f'&d={self.shareCode}'
+                                    f'&folder_id={dirCode}'),\
+                        headers=self.httpHeaders)
         getDirJson = json.loads(getDirReq.text)
         apiUrl = f"https://webapi.ctfile.com{getDirJson['url']}" # 获取文件夹内容 API 接口 URL
         apiRequest = requests.get(apiUrl,headers=self.httpHeaders)
@@ -69,19 +79,19 @@ class CTFileShare:
             fileCode = getFileCode(file) # fileCode 读取挪至 getFileCode 函数
             if fileCode is None:
                 nextDirCode = getDirCode(file)
-                if dirCode is None:
+                if nextDirCode is None:
                     raise TypeError("Unknown File Type")
                 if dirCode == self.shareCode:
                     fileList.append({
                         "type": "Dir",
                         "name": getDirJson['folder_name'],
-                        "files": self.getDirectoryInfo(nextDirCode),
+                        "files": self.getDirectoryInfo(dirCode=nextDirCode),
                     })
                 else:
                     fileList.append({
                         "type": "Dir",
                         "name": getDirJson['folder_name'],
-                        "files": self.getDirectoryInfo(nextDirCode,path=dirCode),
+                        "files": self.getDirectoryInfo(dirCode=nextDirCode),
                     })
             else:
                 fileList.append(self.getFileInfo(fileCode)) # 文件详情读取挪至 getFileInfo
@@ -98,16 +108,16 @@ class CTFileShare:
         fid = getFileJson['file_id']
         fname = getFileJson['file_name']
         fchk = getFileJson["file_chk"]
-        downloadApi = (f'https://webapi.ctfile.com/get_file_url.php?uid={uid}&fid={fid}',\
+        downloadApi = (f'https://webapi.ctfile.com/get_file_url.php?uid={uid}&fid={fid}'\
             f'&file_chk={fchk}')
-        self.ctFileList.append({
+        return {
             "type": "File",
             "name": fname,
             "userId": uid,
             "fileId": fid,
             "fileChk": fchk,
             "downloadAPI": downloadApi,
-        })
+        }
     def getFileShare(self):
         """
         文件夹信息读取
@@ -124,8 +134,11 @@ class CTFileShare:
             self.getFileShare()
 
     def getDownloadLink(self,verifyCodeAutoRetry=True):
-        return self.genDownloadLink(self.ctFileList,verifyCodeAutoRetry=verifyCodeAutoRetry)
-        
+        """
+        下载链接生成主函数
+        """
+        return self.genDownloadLink(self.ctFileList, verifyCodeAutoRetry=verifyCodeAutoRetry)
+
     def genDownloadLink(self,fileList,verifyCodeAutoRetry=True):
         """
         下载链接生成
@@ -147,7 +160,17 @@ class CTFileShare:
                 downloadLinkList.append(['dir',ctFile['name'],filesDownloadLink])
         return downloadLinkList
 
-
+def printDir(fileDir):
+    """
+    文件夹信息显示
+    """
+    print(f"\n文件夹: {fileDir[1]} Start\n")
+    for fileDownloadLink in fileDir[2]:
+        if fileDownloadLink[1] == 'dir':
+            printDir(fileDownloadLink)
+        else:
+            print(f"{fileDownloadLink[1]}\t{fileDownloadLink[2]}")
+    print(f"\n文件夹: {fileDir[1]} End\n")
 if __name__ == '__main__':
     import getpass
     link = input("CTFile Share Link: ")
@@ -156,8 +179,13 @@ if __name__ == '__main__':
     ct = CTFileShare(link,passwd)
     print("\b\b\b\b\b\b\b\b\b\b读取分享...",end='')
     ct.getShare()
-    downloadLinks = ct.genDownloadLink()
+    downloadLinks = ct.getDownloadLink()
     print("\b\b\b\b\b\b\b\b\b\b生成链接...")
     print("\nWarning: 城通网盘在下载直链层进行了多文件下载限制而不是在web界面限制, 无法从浏览器直接全部下载\n\n")
+    print("文件名\t下载链接")
+    print("\n文件夹: / Start\n")
     for downloadLink in downloadLinks:
-        print(f"{downloadLink[0]}\t{downloadLink[1]}\n")
+        if downloadLink[0] == 'dir':
+            printDir(downloadLink)
+        else:
+            print(f"{downloadLink[1]}\t{downloadLink[2]}")
