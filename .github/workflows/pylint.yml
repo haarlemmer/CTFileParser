@@ -19,4 +19,4 @@ jobs:
         pip install pylint
     - name: Analysing the code with pylint
       run: |
-        pylint `ls -R|grep .py$|xargs` --module-naming-style=PascalCase --class-naming-style=PascalCase --method-naming-style=camelCase --variable-naming-style=camelCase --attr-naming-case=camelCase --argument-nameing-case=camelCase
+        pylint `ls -R|grep .py$|xargs` --module-naming-style=PascalCase --class-naming-style=PascalCase --method-naming-style=camelCase --variable-naming-style=camelCase --attr-naming-style=camelCase --argument-nameing-style=camelCase
