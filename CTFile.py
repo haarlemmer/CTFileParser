@@ -1,100 +1,143 @@
+# pylint: disable=missing-module-docstring
+import json
+import re
+import requests
+
+def getDirCode(retFile):
+    """
+    dirCode 读取
+    Usage: getDirCode(<file>)
+    """
+    try:
+        regex = r'(?<=<a href="javascript: void\(0\)" onclick="load_subdir\().*(?=">\))'
+        dirCode = re.search(regex, retFile[1]).group()
+        return dirCode
+    except AttributeError:
+        return None
+def getFileCode(retFile):
+    """
+    fileCode 读取
+    Usage: getFileCode(<file>)
+    """
+    try:
+        # 在城通文件夹分享中, 每一个子文件页面的URL中最后的一项即为fileCode. 此处调用了城通API，
+        # 直接从返回值中提取fileCode. fileCode会过期
+        fileCode = re.search(r'(?<=<a target="_blank" href=").*(?=">)',retFile[1]).group()
+        return fileCode.split('/')[-1]
+    except AttributeError:
+        return None
 class CTFileShare:
-    def __init__(self,ctFileShareLink,ctSharePasswd=None,userAgent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.59 Safari/537.36 Edg/92.0.902.22'):
+    """
+    城通网盘分享类，用于读取城通分享和直链获取.
+    Usage: CTFileShare(<分享链接>, <分享密码>, [userAgent])
+    """
+    def __init__(self,ctFileShareLink,ctSharePasswd=None,userAgent='Mozilla/5.0'):
         self.ctShareLink = ctFileShareLink
-        self.ctServer = f"https://{ctFileShareLink.split('/')[2]}" # 获得城通网盘马甲链接，在获取直链时需要作为首部 Origin 字段发送。
+        # 获得城通网盘马甲链接，在获取直链时需要作为首部 Origin 字段发送
+        self.ctServer = f"https://{ctFileShareLink.split('/')[2]}"
         self.shareType = ctFileShareLink.split('/')[3] # 城通下载链接中, "/d/" 为文件夹, "/f/"为单文件
         self.shareCode = ctFileShareLink.split('/')[4] # 分享URL中最后一项为shareCode
         self.sharePasswd = ctSharePasswd
         self.ctFileList = [] # 文件信息存储
-        self.downloadLinkList = []
-        if ctSharePasswd == None:
+        if ctSharePasswd is None:
             self.httpHeaders = {"user-agent": userAgent,"Origin": self.ctServer}
         else:
             shareId = self.shareCode.split('-')[1]
-            self.httpHeaders = {"user-agent": userAgent,"Origin": self.ctServer,'cookie':f"pass_{self.shareType}{shareId}={str(ctSharePasswd)}"}
+            self.httpHeaders = {"user-agent": userAgent,
+                "Origin": self.ctServer,
+                'cookie':f"pass_{self.shareType}{shareId}={str(ctSharePasswd)}"}
     def getDirectoryShare(self):
+        """
+        文件夹分享读取主函数
+        """
         self.ctFileList = self.getDirectoryInfo(self.shareCode)
         return self.ctFileList
     def getDirectoryInfo(self,dirCode,path="d"):
-        import requests,json
+        """
+        文件夹信息读取
+        Usage: getDirectoryInfo(<文件夹id>,[上级文件夹])
+        """
         fileList = []
-        getDirRequest = requests.get(f'https://webapi.ctfile.com/getdir.php?path={path}&d={dirCode}',headers=self.httpHeaders) # 调用文件夹详情API
-        getDirJson = json.loads(getDirRequest.text)
+        # 调用文件夹详情API
+        getDirReq = requests.get(f'https://webapi.ctfile.com/getdir.php?path={path}&d={dirCode}',\
+                                    headers=self.httpHeaders)
+        getDirJson = json.loads(getDirReq.text)
         apiUrl = f"https://webapi.ctfile.com{getDirJson['url']}" # 获取文件夹内容 API 接口 URL
         apiRequest = requests.get(apiUrl,headers=self.httpHeaders)
         apiJson = json.loads(apiRequest.text)
-        for f in apiJson['aaData']:
-            fileCode = self.getFileCode(f) # fileCode 读取挪至 getFileCode 函数
-            if fileCode == None:
-                nextDirCode = self.getDirCode(f)
-                if dirCode == None:
+        for file in apiJson['aaData']:
+            fileCode = getFileCode(file) # fileCode 读取挪至 getFileCode 函数
+            if fileCode is None:
+                nextDirCode = getDirCode(file)
+                if dirCode is None:
                     raise TypeError("Unknown File Type")
+                if dirCode == self.shareCode:
+                    fileList.append({
+                        "type": "Dir",
+                        "name": getDirJson['folder_name'],
+                        "files": self.getDirectoryInfo(nextDirCode),
+                    })
                 else:
-                    if dirCode == self.shareCode:
-                        fileList.append({
-                            "type": "Dir",
-                            "name": getDirJson['folder_name'],
-                            "files": self.getDirectoryInfo(nextDirCode),
-                        })
-                    else:
-                        fileList.append({
-                            "type": "Dir",
-                            "files": self.getDirectoryInfo(nextDirCode,path=dirCode),
-                        })
+                    fileList.append({
+                        "type": "Dir",
+                        "files": self.getDirectoryInfo(nextDirCode,path=dirCode),
+                    })
             else:
                 fileList.append(self.getFileInfo(fileCode)) # 文件详情读取挪至 getFileInfo
         return fileList
     def getFileInfo(self,fileCode):
-        import json,requests
-        getFileRequest = requests.get(f'https://webapi.ctfile.com/getfile.php?f={fileCode}',headers=self.httpHeaders)
+        """
+        文件信息获取
+        Usage: geFileInfo(<fileCode>)
+        """
+        getFileRequest = requests.get(f'https://webapi.ctfile.com/getfile.php?f={fileCode}',\
+                                        headers=self.httpHeaders)
         getFileJson = json.loads(getFileRequest.text)
         uid = getFileJson['userid']
         fid = getFileJson['file_id']
         fname = getFileJson['file_name']
         fchk = getFileJson["file_chk"]
-        downloadApiLink = f'https://webapi.ctfile.com/get_file_url.php?uid={uid}&fid={fid}&file_chk={fchk}'
-        fileList = [fname,uid,fid,fchk,downloadApiLink]
+        downloadApi = (f'https://webapi.ctfile.com/get_file_url.php?uid={uid}&fid={fid}',\
+            f'&file_chk={fchk}')
         self.ctFileList.append({
             "type": "File",
             "name": fname,
             "userId": uid,
             "fileId": fid,
             "fileChk": fchk,
-            "downloadAPI": downloadApiLink,
+            "downloadAPI": downloadApi,
         })
-    def getDirCode(self,f):
-        import re
-        try:
-            return re.search(r'(?<=<a href="javascript: void\(0\)" onclick="load_subdir\().*(?=">\))',f[1]).group()
-        except:
-            return None
-    def getFileCode(self,f):
-        import re
-        try:
-            return re.search(r'(?<=<a target="_blank" href=").*(?=">)',f[1]).group().split('/')[-1] # 在城通文件夹分享中, 每一个子文件页面的URL中最后的一项即为fileCode. 此处调用了城通API，直接从返回值中提取fileCode. fileCode会过期
-        except:
-            return None
     def getFileShare(self):
+        """
+        文件夹信息读取
+        """
         fileCode = self.shareCode # 在单文件分享中, fileCode 和 shareCode 相同
         self.ctFileList.append(self.getFileInfo(fileCode))
     def getShare(self):
+        """
+        分享读取主函数
+        """
         if self.shareType == 'd':
             self.getDirectoryShare()
         elif self.shareType == 'f':
             self.getFileShare()
     def genDownloadLink(self,verifyCodeAutoRetry=True):
-        import requests,json 
+        """
+        下载链接生成
+        """
+        downloadLinkList = []
         for ctFile in self.ctFileList:
-            downApiRequest = requests.get(f'https://webapi.ctfile.com/get_file_url.php?uid={ctFile[1]}&fid={ctFile[2]}&file_chk={ctFile[3]}')
+            downApiRequest = requests.get(('https://webapi.ctfile.com/get_file_url.php?',\
+                f'uid={ctFile[1]}&fid={ctFile[2]}&file_chk={ctFile[3]}'))
             downApiJson = json.loads(downApiRequest.text)
             if downApiJson['code'] == 503: # 若需要验证码, 则重新调用 API
                 if downApiJson['message'] == 'require for verifycode':
                     if verifyCodeAutoRetry:
                         return self.genDownloadLink()
-                    else:
-                        raise KeyError("CTFile Need A Verify Code And Auto Retry Is Desabled")
-            self.downloadLinkList.append([ctFile[0],downApiJson['downurl']]) # downloadLinkList 的每一个项目都是一个列表, 格式为 [fileName, downloadLink]
-        return self.downloadLinkList
+                    raise KeyError("CTFile Need A Verify Code And Auto Retry Is Desabled")
+            # downloadLinkList 的每一个项目都是一个列表, 格式为 [fileName, downloadLink]
+            downloadLinkList.append([ctFile[0],downApiJson['downurl']])
+        return downloadLinkList
 
 
 if __name__ == '__main__':

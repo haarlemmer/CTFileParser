@@ -1,0 +1,9 @@
+[BASIC]
+module-naming-style=PascalCase
+class-naming-style=PascalCase
+method-naming-style=camelCase
+variable-naming-style=camelCase
+attr-naming-style=camelCase
+argument-naming-style=camelCase
+function-naming-style=camelCase
+desable=missing-module-docstring
