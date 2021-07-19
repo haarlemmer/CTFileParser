@@ -80,6 +80,7 @@ class CTFileShare:
                 else:
                     fileList.append({
                         "type": "Dir",
+                        "name": getDirJson['folder_name'],
                         "files": self.getDirectoryInfo(nextDirCode,path=dirCode),
                     })
             else:
@@ -121,22 +122,29 @@ class CTFileShare:
             self.getDirectoryShare()
         elif self.shareType == 'f':
             self.getFileShare()
-    def genDownloadLink(self,verifyCodeAutoRetry=True):
+
+    def getDownloadLink(self,verifyCodeAutoRetry=True):
+        return self.genDownloadLink(self.ctFileList,verifyCodeAutoRetry=verifyCodeAutoRetry)
+        
+    def genDownloadLink(self,fileList,verifyCodeAutoRetry=True):
         """
         下载链接生成
         """
         downloadLinkList = []
-        for ctFile in self.ctFileList:
-            downApiRequest = requests.get(('https://webapi.ctfile.com/get_file_url.php?',\
-                f'uid={ctFile[1]}&fid={ctFile[2]}&file_chk={ctFile[3]}'))
-            downApiJson = json.loads(downApiRequest.text)
-            if downApiJson['code'] == 503: # 若需要验证码, 则重新调用 API
-                if downApiJson['message'] == 'require for verifycode':
-                    if verifyCodeAutoRetry:
-                        return self.genDownloadLink()
-                    raise KeyError("CTFile Need A Verify Code And Auto Retry Is Desabled")
-            # downloadLinkList 的每一个项目都是一个列表, 格式为 [fileName, downloadLink]
-            downloadLinkList.append([ctFile[0],downApiJson['downurl']])
+        for ctFile in fileList:
+            if ctFile['type'] == "File":
+                downApiRequest = requests.get(ctFile['downloadAPI'],headers=self.httpHeaders)
+                downApiJson = json.loads(downApiRequest.text)
+                if downApiJson['code'] == 503: # 若需要验证码, 则重新调用 API
+                    if downApiJson['message'] == 'require for verifycode':
+                        if verifyCodeAutoRetry:
+                            return self.genDownloadLink(fileList)
+                        raise KeyError("CTFile Need A Verify Code And Auto Retry Is Desabled")
+                # downloadLinkList 的每一个项目都是一个列表, 格式为 [type, fileName, downloadLink]
+                downloadLinkList.append(['file',ctFile['name'],downApiJson['downurl']])
+            elif ctFile['type'] == "Dir":
+                filesDownloadLink = self.genDownloadLink(ctFile['files'])
+                downloadLinkList.append(['dir',ctFile['name'],filesDownloadLink])
         return downloadLinkList
 
 
