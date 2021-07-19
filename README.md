@@ -1,4 +1,6 @@
 # CTFile Auto Download
+[![Pylint](https://github.com/haarlemmer/CTFile-Auto-Download/actions/workflows/pylint.yml/badge.svg)](https://github.com/haarlemmer/CTFile-Auto-Download/actions/workflows/pylint.yml)
+
 基于Python的城通网盘自动下载器, 避免等待多文件下载耗大量时间
 
 ## 功能
