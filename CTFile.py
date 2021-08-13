@@ -124,8 +124,7 @@ class CTFileShare:
         """
         if self.shareType == 'd':
             return self.getFolderShare()
-        elif self.shareType == 'f':
-            return self.getFileShare()
+        return self.getFileShare()
 
     def getDownloadLink(self, verifyCodeAutoRetry=True):
         """
@@ -151,7 +150,9 @@ class CTFileShare:
                 downloadLinkList.append(['File', file['name'], downloadApi['downurl']])
             except KeyError:
                 if verifyCodeAutoRetry is True:
-                    downloadLinkList.append(self.genDownloadLink(file, verifyCodeAutoRetry=verifyCodeAutoRetry))
+                    downloadLinkList.append(
+                        self.genDownloadLink(file,
+                                             verifyCodeAutoRetry=verifyCodeAutoRetry))
         if len(downloadLinkList) == 1:
             downloadLinkList = downloadLinkList[0]
         return downloadLinkList
@@ -162,9 +163,11 @@ def printFolder(fileDir, folderDepth, subDir=False):
     文件夹信息显示
     """
     if subDir:
-        print(f"{'|' if (folderDepth - 1) > 0 else ''}{'  |' * (folderDepth - 2)}  Dir: {fileDir[1]}")
+        print((f"{'|' if (folderDepth - 1) > 0 else ''}"
+               f"{'  |' * (folderDepth - 2)}  Dir: {fileDir[1]}"))
     else:
-        print(f"{'|' if (folderDepth - 1) > 0 else ''}{'  ' * (folderDepth - 1)}Dir: {fileDir[1]}")
+        print((f"{'|' if (folderDepth - 1) > 0 else ''}"
+               f"{'  ' * (folderDepth - 1)}Dir: {fileDir[1]}"))
     for fileDownloadLink in fileDir[2]:
         if fileDownloadLink[0] == 'Folder':
             printFolder(fileDownloadLink, folderDepth + 1, subDir=True)
