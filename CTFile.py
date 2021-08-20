@@ -96,20 +96,12 @@ class CTFileShare:
         getFileRequest = requests.get(f'https://webapi.ctfile.com/getfile.php?f={fileCode}',
                                       headers=self.httpHeaders)
         getFileJson = json.loads(getFileRequest.text)
-        uid = getFileJson['userid']
-        fid = getFileJson['file_id']
-        fileName = getFileJson['file_name']
-        fileChk = getFileJson["file_chk"]
-        downloadApi = (f'https://webapi.ctfile.com/get_file_url.php?uid={uid}&fid={fid}'
-                       f'&file_chk={fileChk}')
-        return {
-            "type": "File",
-            "name": fileName,
-            "userId": uid,
-            "fileId": fid,
-            "fileChk": fileChk,
-            "downloadAPI": downloadApi,
-        }
+        return CTFile(
+            getFileJson['file_name'],
+            getFileJson['userid'],
+            getFileJson['file_id'],
+            getFileJson["file_chk"],
+        )
 
     def getFileShare(self):
         """
@@ -143,21 +135,65 @@ class CTFileShare:
                 downLink = self.genDownloadLink(folderFiles, verifyCodeAutoRetry)
                 folderDownloadLink[2].append(downLink)
             downloadLinkList.append(folderDownloadLink)
-        elif file['type'] == 'File':
-            downloadApiRequest = requests.get(file['downloadAPI'], headers=self.httpHeaders)
-            downloadApi = json.loads(downloadApiRequest.text)
-            try:
-                downloadLinkList.append(['File', file['name'], downloadApi['downurl']])
-            except KeyError:
-                if verifyCodeAutoRetry is True:
-                    downloadLinkList.append(
-                        self.genDownloadLink(file,
-                                             verifyCodeAutoRetry=verifyCodeAutoRetry))
+        elif type(file) == CTFile:
+            downloadLinkList.append(file.genDownloadLink(verifyCodeAutoRetry, self.httpHeaders))
         if len(downloadLinkList) == 1:
             downloadLinkList = downloadLinkList[0]
         return downloadLinkList
 
 
+class File:
+    def __init__(self, name: str):
+        self.name = name
+
+    def __getitem__(self, item):
+        if item == "type":
+            return "File"
+        elif item == "name":
+            return self.name
+
+
+class CTFile(File):
+    def __init__(self, name: str, userId: int, fileId: int, fileChk: str):
+        super().__init__(name)
+        self.userId = userId
+        self.fileId = fileId
+        self.fileChk = fileChk
+
+    def genDownloadApi(self):
+        return ("https://webapi.ctfile.com/get_file_url.php"
+                f"?uid={self.userId}"
+                f"&fid={self.fileId}"
+                f"&file_chk={self.fileChk}"
+                )
+
+    def genDownloadLink(self, verifyCodeAutoRetry, httpHeaders=None):
+        downLink = None
+        if httpHeaders is None:
+            httpHeaders = {'user-agent': "Mozilla/5.0"}
+        downloadApiRequest = requests.get(self.genDownloadApi(), headers=httpHeaders)
+        downloadApi = json.loads(downloadApiRequest.text)
+        try:
+            downLink = ['File', self['name'], downloadApi['downurl']]
+        except KeyError:
+            if verifyCodeAutoRetry is True:
+                downLink = self.genDownloadLink(verifyCodeAutoRetry=verifyCodeAutoRetry)
+        return downLink
+
+    def __getitem__(self, item):
+        if item == 'name':
+            return self.name
+        elif item == 'userId':
+            return self.userId
+        elif item == "fileId":
+            return self.fileId
+        elif item == 'fileChk':
+            return self.fileChk
+        elif item == 'downloadAPI':
+            return self.genDownloadApi()
+        elif item == 'downloadLink'
+
+# --- Demo ---
 def printFolder(fileDir, folderDepth, subDir=False):
     """
     文件夹信息显示
