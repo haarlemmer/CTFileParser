@@ -167,7 +167,7 @@ class CTFile(File):
                 f"&file_chk={self.fileChk}"
                 )
 
-    def genDownloadLink(self, verifyCodeAutoRetry, httpHeaders=None):
+    def genDownloadLink(self, verifyCodeAutoRetry=False, httpHeaders=None):
         downLink = None
         if httpHeaders is None:
             httpHeaders = {'user-agent': "Mozilla/5.0"}
@@ -191,7 +191,9 @@ class CTFile(File):
             return self.fileChk
         elif item == 'downloadAPI':
             return self.genDownloadApi()
-        elif item == 'downloadLink'
+        elif item == 'downloadLink':
+            return self.genDownloadLink()
+
 
 # --- Demo ---
 def printFolder(fileDir, folderDepth, subDir=False):
