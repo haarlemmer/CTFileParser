@@ -10,3 +10,6 @@
     - [X] 单文件分享读取
 - [X] 下载直链生成
 - [ ] 自动顺序下载
+
+## Report BUG
+你可以在 [Youtrack](https://haarlemmer.myjetbrains.com/) 提交 BUG
