@@ -136,7 +136,7 @@ class CTFileShare:
                 folderDownloadLink[2].append(downLink)
             downloadLinkList.append(folderDownloadLink)
         elif type(file) == CTFile:
-            downloadLinkList.append(file.genDownloadLink(verifyCodeAutoRetry, self.httpHeaders))
+            downloadLinkList.append(file)
         if len(downloadLinkList) == 1:
             downloadLinkList = downloadLinkList[0]
         return downloadLinkList
@@ -151,6 +151,9 @@ class File:
             return "File"
         elif item == "name":
             return self.name
+
+    def genDownloadLink(self):
+        pass
 
 
 class CTFile(File):
@@ -174,7 +177,7 @@ class CTFile(File):
         downloadApiRequest = requests.get(self.genDownloadApi(), headers=httpHeaders)
         downloadApi = json.loads(downloadApiRequest.text)
         try:
-            downLink = ['File', self['name'], downloadApi['downurl']]
+            downLink = CTFileDownloadLink(self, downloadApi['downurl'])
         except KeyError:
             if verifyCodeAutoRetry is True:
                 downLink = self.genDownloadLink(verifyCodeAutoRetry=verifyCodeAutoRetry)
@@ -194,6 +197,39 @@ class CTFile(File):
         elif item == 'downloadLink':
             return self.genDownloadLink()
 
+    def __str__(self):
+        return "CTFile Object: name: " + self.name
+
+
+class DownloadLink:
+    def __init__(self, fileDownloadLink=None):
+        self.link = fileDownloadLink
+
+    def getDownloadLink(self):
+        return self.link
+
+
+class CTFileDownloadLink(DownloadLink):
+    def __init__(self, fileObject: File, fileDownloadLink: str):
+        super().__init__(fileDownloadLink=fileDownloadLink)
+        self.fileObject = fileObject
+
+    def renewDownloadLink(self):
+        newDownloadLink = self.fileObject.genDownloadLink()
+        self.link = newDownloadLink
+        return newDownloadLink
+
+    def __getitem__(self, item):
+        if item == 'downloadLink':
+            return self.getDownloadLink()
+        elif item == 'renewDownloadLink':
+            return self.renewDownloadLink()
+        elif item == 'name':
+            return self.fileObject['name']
+
+    def __str__(self):
+        return self.getDownloadLink()
+
 
 # --- Demo ---
 def printFolder(fileDir, folderDepth, subDir=False):
@@ -207,10 +243,10 @@ def printFolder(fileDir, folderDepth, subDir=False):
         print((f"{'|' if (folderDepth - 1) > 0 else ''}"
                f"{'  ' * (folderDepth - 1)}Dir: {fileDir[1]}"))
     for fileDownloadLink in fileDir[2]:
-        if fileDownloadLink[0] == 'Folder':
+        if type(fileDownloadLink) == list:
             printFolder(fileDownloadLink, folderDepth + 1, subDir=True)
         else:
-            print(f"|{'  |' * folderDepth} {fileDownloadLink[1]}\t{fileDownloadLink[2]}")
+            print(f"|{'  |' * folderDepth} {fileDownloadLink['name']}\t{fileDownloadLink['downloadLink']}")
 
 
 if __name__ == '__main__':
@@ -229,7 +265,7 @@ if __name__ == '__main__':
     print("---- Raw ----\n")
 
     print("--Download Link--")
-    if downloadLink[0] == 'Folder':
+    if type(downloadLink) == list:
         printFolder(downloadLink, 1)
     else:
         print("File Name\tDownload Link")
