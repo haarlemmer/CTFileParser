@@ -166,7 +166,6 @@ class CTFile:
         """
         对于当前文件的下载链接生成
         """
-        downLink = None
         if httpHeaders is None:
             httpHeaders = {'user-agent': "Mozilla/5.0"}
         downloadApiRequest = requests.get(self.genDownloadApi(), headers=httpHeaders)
