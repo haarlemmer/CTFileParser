@@ -118,13 +118,13 @@ class CTFileShare:
             return self.getFolderShare()
         return self.getFileShare()
 
-    def getDownloadLink(self, verifyCodeAutoRetry=True):
+    def getFileList(self, verifyCodeAutoRetry=True):
         """
         下载链接生成主函数
         """
-        return self.genDownloadLink(self.file, verifyCodeAutoRetry=verifyCodeAutoRetry)
+        return self.genFileList(self.file, verifyCodeAutoRetry=verifyCodeAutoRetry)
 
-    def genDownloadLink(self, file, verifyCodeAutoRetry=True):
+    def genFileList(self, file, verifyCodeAutoRetry=True):
         """
         下载链接生成
         """
@@ -132,33 +132,22 @@ class CTFileShare:
         if file['type'] == "Folder":
             folderDownloadLink = ["Folder", file['name'], []]
             for folderFiles in file['files']:
-                downLink = self.genDownloadLink(folderFiles, verifyCodeAutoRetry)
+                downLink = self.genFileList(folderFiles, verifyCodeAutoRetry)
                 folderDownloadLink[2].append(downLink)
             downloadLinkList.append(folderDownloadLink)
-        elif type(file) == CTFile:
+        elif isinstance(file, CTFile):
             downloadLinkList.append(file)
         if len(downloadLinkList) == 1:
             downloadLinkList = downloadLinkList[0]
         return downloadLinkList
 
 
-class File:
-    def __init__(self, name: str):
-        self.name = name
-
-    def __getitem__(self, item):
-        if item == "type":
-            return "File"
-        elif item == "name":
-            return self.name
-
-    def genDownloadLink(self):
-        pass
-
-
-class CTFile(File):
+class CTFile:
+    """
+    城通文件
+    """
     def __init__(self, name: str, userId: int, fileId: int, fileChk: str):
-        super().__init__(name)
+        self.name = name
         self.userId = userId
         self.fileId = fileId
         self.fileChk = fileChk
@@ -201,21 +190,16 @@ class CTFile(File):
         return "CTFile Object: name: " + self.name
 
 
-class DownloadLink:
-    def __init__(self, fileDownloadLink=None):
+class CTFileDownloadLink:
+    def __init__(self, CTFileObject: CTFile, fileDownloadLink: str):
         self.link = fileDownloadLink
+        self.CTFileObject = CTFileObject
 
     def getDownloadLink(self):
         return self.link
 
-
-class CTFileDownloadLink(DownloadLink):
-    def __init__(self, fileObject: File, fileDownloadLink: str):
-        super().__init__(fileDownloadLink=fileDownloadLink)
-        self.fileObject = fileObject
-
     def renewDownloadLink(self):
-        newDownloadLink = self.fileObject.genDownloadLink()
+        newDownloadLink = self.CTFileObject.genDownloadLink()
         self.link = newDownloadLink
         return newDownloadLink
 
@@ -225,7 +209,7 @@ class CTFileDownloadLink(DownloadLink):
         elif item == 'renewDownloadLink':
             return self.renewDownloadLink()
         elif item == 'name':
-            return self.fileObject['name']
+            return self.CTFileObject['name']
 
     def __str__(self):
         return self.getDownloadLink()
@@ -243,7 +227,7 @@ def printFolder(fileDir, folderDepth, subDir=False):
         print((f"{'|' if (folderDepth - 1) > 0 else ''}"
                f"{'  ' * (folderDepth - 1)}Dir: {fileDir[1]}"))
     for fileDownloadLink in fileDir[2]:
-        if type(fileDownloadLink) == list:
+        if isinstance(fileDownloadLink, list):
             printFolder(fileDownloadLink, folderDepth + 1, subDir=True)
         else:
             print(f"|{'  |' * folderDepth} {fileDownloadLink['name']}\t{fileDownloadLink['downloadLink']}")
@@ -254,7 +238,7 @@ if __name__ == '__main__':
     passwd = input("Password: ")
     ct = CTFileShare(link, passwd)
     getShare = ct.getShare()
-    downloadLink = ct.getDownloadLink()
+    downloadLink = ct.getFileList()
     print("---- Raw ----\n")
     print("-- getShare() Raw Return --")
     print(getShare)
@@ -265,7 +249,7 @@ if __name__ == '__main__':
     print("---- Raw ----\n")
 
     print("--Download Link--")
-    if type(downloadLink) == list:
+    if isinstance(downloadLink, list):
         printFolder(downloadLink, 1)
     else:
         print("File Name\tDownload Link")
