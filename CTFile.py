@@ -153,6 +153,9 @@ class CTFile:
         self.fileChk = fileChk
 
     def genDownloadApi(self):
+        """
+        获取城通网盘下载链接生成API的URL
+        """
         return ("https://webapi.ctfile.com/get_file_url.php"
                 f"?uid={self.userId}"
                 f"&fid={self.fileId}"
@@ -160,56 +163,72 @@ class CTFile:
                 )
 
     def genDownloadLink(self, verifyCodeAutoRetry=False, httpHeaders=None):
+        """
+        对于当前文件的下载链接生成
+        """
         downLink = None
         if httpHeaders is None:
             httpHeaders = {'user-agent': "Mozilla/5.0"}
         downloadApiRequest = requests.get(self.genDownloadApi(), headers=httpHeaders)
         downloadApi = json.loads(downloadApiRequest.text)
         try:
-            downLink = CTFileDownloadLink(self, downloadApi['downurl'])
+            return CTFileDownloadLink(self, downloadApi['downurl'])
         except KeyError:
             if verifyCodeAutoRetry is True:
-                downLink = self.genDownloadLink(verifyCodeAutoRetry=verifyCodeAutoRetry)
-        return downLink
+                return self.genDownloadLink(verifyCodeAutoRetry=verifyCodeAutoRetry)
+        return None
 
     def __getitem__(self, item):
+        retItem = None
         if item == 'name':
-            return self.name
+            retItem = self.name
         elif item == 'userId':
-            return self.userId
+            retItem = self.userId
         elif item == "fileId":
-            return self.fileId
+            retItem = self.fileId
         elif item == 'fileChk':
-            return self.fileChk
+            retItem = self.fileChk
         elif item == 'downloadAPI':
-            return self.genDownloadApi()
+            retItem = self.genDownloadApi()
         elif item == 'downloadLink':
-            return self.genDownloadLink()
+            retItem = self.genDownloadLink()
+        return retItem
 
     def __str__(self):
         return "CTFile Object: name: " + self.name
 
 
 class CTFileDownloadLink:
-    def __init__(self, CTFileObject: CTFile, fileDownloadLink: str):
+    """
+    城通网盘下载链接类
+    """
+    def __init__(self, ctFileObject: CTFile, fileDownloadLink: str):
         self.link = fileDownloadLink
-        self.CTFileObject = CTFileObject
+        self.ctFileObject = ctFileObject
 
     def getDownloadLink(self):
+        """
+        获取下载链接
+        """
         return self.link
 
     def renewDownloadLink(self):
-        newDownloadLink = self.CTFileObject.genDownloadLink()
+        """
+        刷新下载链接
+        """
+        newDownloadLink = self.ctFileObject.genDownloadLink()
         self.link = newDownloadLink
         return newDownloadLink
 
     def __getitem__(self, item):
+        retItem = None
         if item == 'downloadLink':
-            return self.getDownloadLink()
+            retItem = self.getDownloadLink()
         elif item == 'renewDownloadLink':
-            return self.renewDownloadLink()
+            retItem = self.renewDownloadLink()
         elif item == 'name':
-            return self.CTFileObject['name']
+            retItem = self.ctFileObject['name']
+        return retItem
 
     def __str__(self):
         return self.getDownloadLink()
@@ -230,7 +249,8 @@ def printFolder(fileDir, folderDepth, subDir=False):
         if isinstance(fileDownloadLink, list):
             printFolder(fileDownloadLink, folderDepth + 1, subDir=True)
         else:
-            print(f"|{'  |' * folderDepth} {fileDownloadLink['name']}\t{fileDownloadLink['downloadLink']}")
+            print((f"|{'  |' * folderDepth} {fileDownloadLink['name']}"
+                   f"\t{fileDownloadLink['downloadLink']}"))
 
 
 if __name__ == '__main__':
