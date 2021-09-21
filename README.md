@@ -15,4 +15,5 @@
 你可以在 [Issues](https://github.com/haarlemmer/CTFile-Auto-Download/issues) 提交 BUG
 
 ## Thanks
-![JetBrains](https://github.com/haarlemmer/CTFile-Auto-Download/blob/master/thanks/jetbrains.png?raw=true)
+
+[<img alt="JetBrains" height="216.8" src="https://github.com/haarlemmer/CTFile-Auto-Download/blob/master/thanks/jetbrains.png?raw=true" width="200"/>](https://jb.gg/OpenSource)
