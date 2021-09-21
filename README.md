@@ -12,4 +12,4 @@
 - [ ] 自动顺序下载
 
 ## Report BUG
-你可以在 [Youtrack](https://haarlemmer.myjetbrains.com/) 提交 BUG
+你可以在 [Issues](https://github.com/haarlemmer/CTFile-Auto-Download/issues) 提交 BUG
