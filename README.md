@@ -13,3 +13,6 @@
 
 ## Report BUG
 你可以在 [Issues](https://github.com/haarlemmer/CTFile-Auto-Download/issues) 提交 BUG
+
+## Thanks
+![JetBrains](https://github.com/haarlemmer/CTFile-Auto-Download/blob/master/thanks/jetbrains.png?raw=true)
