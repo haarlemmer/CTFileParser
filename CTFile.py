@@ -205,6 +205,9 @@ class CTFileDownloadLink:
         self.link = fileDownloadLink
         self.ctFileObject = ctFileObject
 
+    def getFileObject(self):
+        return self.ctFileObject
+
     def getDownloadLink(self):
         """
         获取下载链接
