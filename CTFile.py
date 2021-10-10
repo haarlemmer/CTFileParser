@@ -51,7 +51,8 @@ class CTFileShare:
             shareId = self.shareCode.split('-')[1]
             self.httpHeaders = {"user-agent": userAgent,
                                 "Origin": self.ctServer,
-                                'cookie': f"pass_{self.shareType}{shareId}={str(ctSharePasswd)}"}
+                                'cookie': (f"pass_{self.shareType}{shareId}="
+                                           f"{str(ctSharePasswd)}")}
 
     def getFolderShare(self):
         """
@@ -82,8 +83,8 @@ class CTFileShare:
         for file in folderFileList['aaData']:
             fileCode = getFileCode(file)
             if fileCode is None:
-                nexFolderId = getFolderId(file)
-                folderInfo['files'].append(self.getFolderInfo(nexFolderId))
+                nextFolderId = getFolderId(file)
+                folderInfo['files'].append(self.getFolderInfo(nextFolderId))
             else:
                 folderInfo['files'].append(self.getFileInfo(fileCode))
         return folderInfo
@@ -147,10 +148,10 @@ class CTFile:
     城通文件
     """
     def __init__(self, name: str, userId: int, fileId: int, fileChk: str):
-        self.name = name
-        self.userId = userId
-        self.fileId = fileId
-        self.fileChk = fileChk
+        self.name = name        # Filename
+        self.userId = userId    # UID
+        self.fileId = fileId    # FID
+        self.fileChk = fileChk  # File's Checksum (unknown type)
 
     def genDownloadApi(self):
         """
@@ -202,7 +203,7 @@ class CTFileDownloadLink:
     城通网盘下载链接类
     """
     def __init__(self, ctFileObject: CTFile, fileDownloadLink: str):
-        self.link = fileDownloadLink
+        self.fileDownloadLink = fileDownloadLink
         self.ctFileObject = ctFileObject
 
     def getFileObject(self):
@@ -212,25 +213,25 @@ class CTFileDownloadLink:
         """
         获取下载链接
         """
-        return self.link
+        return self.fileDownloadLink
 
     def renewDownloadLink(self):
         """
         刷新下载链接
         """
         newDownloadLink = self.ctFileObject.genDownloadLink()
-        self.link = newDownloadLink
+        self.fileDownloadLink = newDownloadLink
         return newDownloadLink
 
     def __getitem__(self, item):
-        retItem = None
+        returnItem = None
         if item == 'downloadLink':
-            retItem = self.getDownloadLink()
+            returnItem = self.getDownloadLink()
         elif item == 'renewDownloadLink':
-            retItem = self.renewDownloadLink()
+            returnItem = self.renewDownloadLink()
         elif item == 'name':
-            retItem = self.ctFileObject['name']
-        return retItem
+            returnItem = self.ctFileObject['name']
+        return returnItem
 
     def __str__(self):
         return self.getDownloadLink()
