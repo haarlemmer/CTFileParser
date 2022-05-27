@@ -157,10 +157,10 @@ class CTFile:
         """
         获取城通网盘下载链接生成API的URL
         """
-        return ("https://webapi.ctfile.com/get_file_url.php"
-                f"?uid={self.userId}"
-                f"&fid={self.fileId}"
-                f"&file_chk={self.fileChk}"
+        return ("https://webapi.ctfile.com/get_file_url.php?"
+                f"uid={self.userId}&"
+                f"fid={self.fileId}&"
+                f"file_chk={self.fileChk}"
                 )
 
     def genDownloadLink(self, verifyCodeAutoRetry=False, httpHeaders=None):
