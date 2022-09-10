@@ -25,7 +25,9 @@ def getFileCode(retFile):
     try:
         # 在城通文件夹分享中, 每一个子文件页面的URL中最后的一项即为fileCode. 此处调用API，
         # 直接从返回值中提取fileId. fileId会过期
-        fileCode = re.search(r'(?<=<a target="_blank" href=").*(?=">)', retFile[1]).group()
+        fileCode = re.search(r'(?<=href=").*(?=">)', retFile[1]).group()
+        if "load_subdir" in fileCode:    # 对于文件夹的错误解析, 不应返回值
+            return None
         return fileCode.split('/')[-1]
     except AttributeError:
         return None
@@ -99,10 +101,10 @@ class CTFileShare:
                                       headers=self.httpHeaders)
         getFileJson = json.loads(getFileRequest.text)
         return CTFile(
-            getFileJson['file_name'],
-            getFileJson['userid'],
-            getFileJson['file_id'],
-            getFileJson["file_chk"],
+            getFileJson['file']['file_name'],
+            getFileJson['file']['userid'],
+            getFileJson['file']['file_id'],
+            getFileJson['file']["file_chk"],
         )
 
     def getFileShare(self):
