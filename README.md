@@ -27,6 +27,7 @@
 
 ## Known Issues 已知问题
 - [ ] \[ Issues [#2](https://github.com/haarlemmer/CTFile-Auto-Download/issues/2) \]读取包含大量文件的分享时, 爬虫会触发城通的风控出现HTTP 429错误, IP被封
+- [ ] 无法解析带密码的分享链接
 - [X] 城通API改版导致无法解析
 
 ## Report Issues 提交问题
