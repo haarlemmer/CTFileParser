@@ -34,16 +34,17 @@ def getFileCode(retFile):
 class CTFileShare:
     """
     城通网盘分享类，用于读取城通分享和直链获取.
-    Usage: CTFileShare(<分享链接>, <分享密码>, [userAgent])
+    Usage: CTFileShare(<分享链接>, <分享密码>, [API调用延迟], [userAgent])
     """
 
-    def __init__(self, ctFileShareLink, ctSharePasswd=None, userAgent='Mozilla/5.0'):
+    def __init__(self, ctFileShareLink, ctSharePasswd=None, apiRequestDelay=0, userAgent='Mozilla/5.0'):
         self.ctShareLink = ctFileShareLink
         # 获得城通网盘马甲链接，在获取直链时需要作为首部 Origin 字段发送
         self.ctServer = f"https://{ctFileShareLink.split('/')[2]}"
         self.shareType = ctFileShareLink.split('/')[3]  # 城通下载链接中, "/d/" 为文件夹, "/f/"为单文件
         self.shareCode = ctFileShareLink.split('/')[4]  # 分享URL中最后一项为shareCode
         self.sharePasswd = ctSharePasswd
+        self.apiRequestDelay = apiRequestDelay
         self.file = []  # 文件信息存储
         if ctSharePasswd is None:
             self.httpHeaders = {"user-agent": userAgent, "Origin": self.ctServer}
@@ -52,7 +53,7 @@ class CTFileShare:
             self.httpHeaders = {"user-agent": userAgent,
                                 "Origin": self.ctServer,
                                 'cookie': (f"pass_{self.shareType}{shareId}="
-                                           f"{str(ctSharePasswd)}")}
+                                           f"{str(ctSharePasswd)}")}  # 事先在Cookie中写入"解密文件页"写入的Cookie
 
     def getFolderShare(self):
         """
@@ -73,11 +74,11 @@ class CTFileShare:
         folderInfoJson = json.loads(getFolderRequest.text)
         folderInfo = {
             'type': 'Folder',
-            'name': folderInfoJson['folder_name'],
-            'folderId': folderInfoJson['folder_id'],
+            'name': folderInfoJson['file']['folder_name'],
+            'folderId': folderInfoJson['file']['folder_id'],
             'files': []
         }
-        folderFileListRequest = requests.get(f"https://webapi.ctfile.com{folderInfoJson['url']}",
+        folderFileListRequest = requests.get(f"https://webapi.ctfile.com{folderInfoJson['file']['url']}",
                                              headers=self.httpHeaders)
         folderFileList = json.loads(folderFileListRequest.text)
         for file in folderFileList['aaData']:
