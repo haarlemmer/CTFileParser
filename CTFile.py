@@ -67,7 +67,7 @@ class CTFileShare:
     def getFolderInfo(self, folderId=""):
         """
         文件夹信息读取
-        Usage: getDirectoryInfo(<文件夹id>,[上级文件夹])
+        Usage: getFolderInfo([上级文件夹])
         """
         getFolderRequest = requests.get(('https://webapi.ctfile.com/getdir.php?path=d&'
                                          f'd={self.shareCode}&'
@@ -121,30 +121,6 @@ class CTFileShare:
         if self.shareType == 'd':
             return self.getFolderShare()
         return self.getFileShare()
-
-    def getFileList(self, verifyCodeAutoRetry=True):
-        """
-        下载链接生成主函数
-        """
-        return self.genFileList(self.file, verifyCodeAutoRetry=verifyCodeAutoRetry)
-
-    def genFileList(self, file, verifyCodeAutoRetry=True):
-        """
-        下载链接生成
-        """
-        downloadLinkList = []
-        if file['type'] == "Folder":
-            folderDownloadLink = ["Folder", file['name'], []]
-            for folderFiles in file['files']:
-                downLink = self.genFileList(folderFiles, verifyCodeAutoRetry)
-                folderDownloadLink[2].append(downLink)
-            downloadLinkList.append(folderDownloadLink)
-        elif isinstance(file, CTFile):
-            downloadLinkList.append(file)
-        if len(downloadLinkList) == 1:
-            downloadLinkList = downloadLinkList[0]
-        return downloadLinkList
-
 
 class CTFile:
     """
@@ -247,16 +223,16 @@ def printFolder(fileDir, folderDepth, subDir=False):
     """
     if subDir:
         print((f"{'|' if (folderDepth - 1) > 0 else ''}"
-               f"{'  |' * (folderDepth - 2)}  Dir: {fileDir[1]}"))
+               f"{'  |' * (folderDepth - 2)}  Dir: {fileDir['name']}"))
     else:
         print((f"{'|' if (folderDepth - 1) > 0 else ''}"
-               f"{'  ' * (folderDepth - 1)}Dir: {fileDir[1]}"))
-    for fileDownloadLink in fileDir[2]:
-        if isinstance(fileDownloadLink, list):
+               f"{'  ' * (folderDepth - 1)}Dir: {fileDir['name']}"))
+    for fileDownloadLink in fileDir['files']:
+        if isinstance(fileDownloadLink, dict):
             printFolder(fileDownloadLink, folderDepth + 1, subDir=True)
-        else:
-            print((f"|{'  |' * folderDepth} {fileDownloadLink['name']}"
-                   f"\t{fileDownloadLink['downloadLink']}"))
+        elif isinstance(fileDownloadLink, CTFile):
+            print((f"|{'  |' * (folderDepth - 1)} {fileDownloadLink['name']}"
+                   f"\t{fileDownloadLink['downloadLink']['downloadLink']}"))
 
 
 if __name__ == '__main__':
@@ -267,20 +243,14 @@ if __name__ == '__main__':
         passwd = input("Password: ")
     ct = CTFileShare(link, passwd)
     getShare = ct.getShare()
-    downloadLink = ct.getFileList()
-    print("---- Raw ----\n")
     print("-- getShare() Raw Return --")
     print(getShare)
     print("-- getShare() Raw Return --\n")
-    print("-- genDownloadLink() Raw Return --")
-    print(downloadLink)
-    print("-- genDownloadLink() Raw Return --\n")
-    print("---- Raw ----\n")
 
     print("--Download Link--")
-    if isinstance(downloadLink, list):
-        printFolder(downloadLink, 1)
+    if isinstance(getShare, dict):
+        printFolder(getShare, 1)
     else:
         print("File Name\tDownload Link")
-        print(f"{downloadLink[1]}\t{downloadLink[2]}")
+        print(f"{getShare['name']}\t{getShare['downloadLink']}")
     print("--Download Link--")
