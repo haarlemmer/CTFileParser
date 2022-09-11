@@ -261,7 +261,10 @@ def printFolder(fileDir, folderDepth, subDir=False):
 
 if __name__ == '__main__':
     link = input("CTFile Share Link: ")
-    passwd = input("Password: ")
+    if "?" in link:
+        passwd = link.split("?")[-1].split("=")[-1]
+    else:
+        passwd = input("Password: ")
     ct = CTFileShare(link, passwd)
     getShare = ct.getShare()
     downloadLink = ct.getFileList()
