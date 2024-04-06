@@ -1,12 +1,9 @@
 # CTFileParser
-[![Pylint](https://github.com/haarlemmer/CTFile-Auto-Download/actions/workflows/pylint.yml/badge.svg)](https://github.com/haarlemmer/CTFile-Auto-Download/actions/workflows/pylint.yml)
+[![Auto Test](https://github.com/haarlemmer/CTFileParser/actions/workflows/testscript.yml/badge.svg)](https://github.com/haarlemmer/CTFileParser/actions/workflows/testscript.yml)
+
+*上方的 Badge 显示了上次 Commit 时此程序是否可用*
 
 城通网盘解析模块
-
-**现观察到城通网盘对API进行了更改，模块现不可用，请等待更新**
-
-## Todo
-- [ ] 修复解析
 
 ## Features
 - [X] 城通及其马甲域名（包括自定义域名）分享链接解析
