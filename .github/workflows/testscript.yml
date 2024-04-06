@@ -3,7 +3,7 @@ name: Auto Test
 on: [push]
 
 jobs:
-  build:
+  TestScript:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
