@@ -1,5 +1,6 @@
 from utils.logging import testPrint
 import testscripts.tests as tests
+import os
 
 # ----- Test Data -----
 shareUrl = "https://url21.ctfile.com/d/37740821-60674467-922bf9"
@@ -14,6 +15,10 @@ expectedFileContents = {
     'XWewZ4d5b3DDaMVsLEy7WZxQFnC96XdQ.txt': '5x9Se5AF5HvmSDD8w4ApK9VPQuWqC22b',
     'zVhRpmCeatLJVdEjCEDnWVCzzk6kvcqK.txt': 'P9BRnug7g66j7ZSadwS6pMhwREUuC4yk',
 }
+try:
+    os.mkdir('TestData')
+except FileExistsError:
+    pass
 
 testPrint('TestMain', 'info', 'Starting ParseTest...')
 fileList = tests.parseTest(shareUrl, sharePass, expectedFolder)
@@ -29,3 +34,5 @@ tests.contentTest(expectedFileContents)
 testPrint('TestMain', 'info', 'ContentTest Complete!')
 
 testPrint('TestMain', 'info', 'Test Complete!')
+
+os.system('rm -rf TestData/')

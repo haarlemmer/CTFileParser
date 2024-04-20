@@ -47,10 +47,7 @@ def proccessRetFolder(retFolder):
 # DownloadTest Start
 
 def downloadTest(fileList):
-    try:
-        os.mkdir('TestData')
-    except FileExistsError:
-        pass
+
     links = getDownloadLinkForFolder(fileList)
     testPrint('DownloadTest', 'debug', f'Links: {links}')
     for fileName in list(links.keys()):
