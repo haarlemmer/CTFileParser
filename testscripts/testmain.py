@@ -19,4 +19,13 @@ testPrint('TestMain', 'info', 'Starting ParseTest...')
 fileList = tests.parseTest(shareUrl, sharePass, expectedFolder)
 testPrint('TestMain', 'info', '')
 testPrint('TestMain', 'info', 'ParseTest Complete!')
+
+testPrint('TestMain', 'info', 'Starting DownloadTest...')
+tests.downloadTest(fileList)
+testPrint('TestMain', 'info', 'DownloadTest Complete!')
+
+testPrint('TestMain', 'info', 'Starting ContentTest...')
+tests.contentTest(expectedFileContents)
+testPrint('TestMain', 'info', 'ContentTest Complete!')
+
 testPrint('TestMain', 'info', 'Test Complete!')
